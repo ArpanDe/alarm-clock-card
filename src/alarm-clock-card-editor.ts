@@ -37,6 +37,34 @@ export class AlarmClockCardEditor extends LitElement implements LovelaceCardEdit
     return this._config?.show_time_picker !== false;
   }
 
+  get _show_title(): boolean {
+    return this._config?.show_title !== false;
+  }
+
+  get _show_status(): boolean {
+    return this._config?.show_status !== false;
+  }
+
+  get _show_settings_menu(): boolean {
+    return this._config?.show_settings_menu !== false;
+  }
+
+  get _show_alarm_time(): boolean {
+    return this._config?.show_alarm_time !== false;
+  }
+
+  get _show_next_alarm(): boolean {
+    return this._config?.show_next_alarm !== false;
+  }
+
+  get _show_countdown(): boolean {
+    return this._config?.show_countdown !== false;
+  }
+
+  get _show_controls(): boolean {
+    return this._config?.show_controls !== false;
+  }
+
   get _show_days(): boolean {
     return this._config?.show_days !== false;
   }
@@ -94,11 +122,60 @@ export class AlarmClockCardEditor extends LitElement implements LovelaceCardEdit
 
         <div class="option switches-section">
           <label>Display Options</label>
+
+          <ha-formfield label="Show title">
+            <ha-switch
+              .checked=${this._show_title}
+              @change=${(e: Event) => this._toggleChanged('show_title', e)}
+            ></ha-switch>
+          </ha-formfield>
+
+          <ha-formfield label="Show status badge">
+            <ha-switch
+              .checked=${this._show_status}
+              @change=${(e: Event) => this._toggleChanged('show_status', e)}
+            ></ha-switch>
+          </ha-formfield>
+
+          <ha-formfield label="Show settings menu">
+            <ha-switch
+              .checked=${this._show_settings_menu}
+              @change=${(e: Event) => this._toggleChanged('show_settings_menu', e)}
+            ></ha-switch>
+          </ha-formfield>
+
+          <ha-formfield label="Show alarm time">
+            <ha-switch
+              .checked=${this._show_alarm_time}
+              @change=${(e: Event) => this._toggleChanged('show_alarm_time', e)}
+            ></ha-switch>
+          </ha-formfield>
+
+          <ha-formfield label="Show next alarm">
+            <ha-switch
+              .checked=${this._show_next_alarm}
+              @change=${(e: Event) => this._toggleChanged('show_next_alarm', e)}
+            ></ha-switch>
+          </ha-formfield>
+
+          <ha-formfield label="Show countdown">
+            <ha-switch
+              .checked=${this._show_countdown}
+              @change=${(e: Event) => this._toggleChanged('show_countdown', e)}
+            ></ha-switch>
+          </ha-formfield>
           
           <ha-formfield label="Show time picker">
             <ha-switch
               .checked=${this._show_time_picker}
               @change=${(e: Event) => this._toggleChanged('show_time_picker', e)}
+            ></ha-switch>
+          </ha-formfield>
+
+          <ha-formfield label="Show controls">
+            <ha-switch
+              .checked=${this._show_controls}
+              @change=${(e: Event) => this._toggleChanged('show_controls', e)}
             ></ha-switch>
           </ha-formfield>
           

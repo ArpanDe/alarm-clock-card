@@ -61,7 +61,14 @@ type: custom:alarm-clock-card
 entity: alarm_clock.bedroom_alarm
 name: "Bedroom Alarm"
 use_24_hour_format: true  # Optional: Use 24-hour format
+show_title: true
+show_status: true
+show_settings_menu: true
+show_alarm_time: true
+show_next_alarm: true
+show_countdown: true
 show_time_picker: true
+show_controls: true
 show_days: true
 show_scripts: true
 show_snooze_info: true
@@ -71,13 +78,42 @@ show_snooze_info: true
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `entity` | string | **Required** | Alarm clock entity ID |
+| `entity` | string | Optional | Alarm clock entity ID (used to resolve the device) |
+| `device_id` | string | Optional | Alarm clock device ID |
 | `name` | string | `"Alarm Clock"` | Card title |
 | `use_24_hour_format` | boolean | `false` | Use 24-hour time format instead of AM/PM |
+| `show_title` | boolean | `true` | Show the card title |
+| `show_status` | boolean | `true` | Show the alarm status badge |
+| `show_settings_menu` | boolean | `true` | Show the runtime settings menu |
+| `show_alarm_time` | boolean | `true` | Show the main alarm time |
+| `show_next_alarm` | boolean | `true` | Show the next alarm info |
+| `show_countdown` | boolean | `true` | Show countdown to alarm or snooze end |
 | `show_time_picker` | boolean | `true` | Show the time picker input |
+| `show_controls` | boolean | `true` | Show enable/snooze/dismiss controls |
 | `show_days` | boolean | `true` | Show day selection buttons |
 | `show_scripts` | boolean | `true` | Show configured scripts info |
 | `show_snooze_info` | boolean | `true` | Show snooze info when snoozed |
+
+**Note:** You must provide either `entity` or `device_id` in the card configuration.
+
+### Minimal Example (Next Alarm Only)
+
+```yaml
+type: custom:alarm-clock-card
+entity: alarm_clock.bedroom_alarm
+name: "Next Alarm"
+show_title: false
+show_status: false
+show_settings_menu: false
+show_alarm_time: false
+show_next_alarm: true
+show_countdown: false
+show_time_picker: false
+show_controls: false
+show_days: false
+show_scripts: false
+show_snooze_info: false
+```
 
 ## ⚙️ Runtime Settings
 
