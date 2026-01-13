@@ -14,6 +14,13 @@ export declare class AlarmClockCardEditor extends LitElement implements Lovelace
     get _device_id(): string;
     get _name(): string;
     get _show_time_picker(): boolean;
+    get _show_title(): boolean;
+    get _show_status(): boolean;
+    get _show_settings_menu(): boolean;
+    get _show_alarm_time(): boolean;
+    get _show_next_alarm(): boolean;
+    get _show_countdown(): boolean;
+    get _show_controls(): boolean;
     get _show_days(): boolean;
     get _show_scripts(): boolean;
     get _show_snooze_info(): boolean;
