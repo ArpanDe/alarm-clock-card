@@ -20,12 +20,20 @@ import { getTranslations, detectLanguage, Translations } from './translations';
 
 export interface AlarmClockCardConfig extends LovelaceCardConfig {
   type: string;
-  device_id: string;
+  device_id?: string;
+  entity?: string;
   name?: string;
   show_time_picker?: boolean;
   show_days?: boolean;
   show_scripts?: boolean;
   show_snooze_info?: boolean;
+  show_title?: boolean;
+  show_status?: boolean;
+  show_settings_menu?: boolean;
+  show_alarm_time?: boolean;
+  show_next_alarm?: boolean;
+  show_countdown?: boolean;
+  show_controls?: boolean;
   use_24_hour_format?: boolean;
   debug?: boolean;
   theme?: string;
@@ -49,6 +57,13 @@ export class AlarmClockCard extends LitElement implements LovelaceCard {
       show_days: true,
       show_scripts: true,
       show_snooze_info: true,
+      show_title: true,
+      show_status: true,
+      show_settings_menu: true,
+      show_alarm_time: true,
+      show_next_alarm: true,
+      show_countdown: true,
+      show_controls: true,
     };
   }
 
@@ -86,8 +101,8 @@ export class AlarmClockCard extends LitElement implements LovelaceCard {
   }
 
   public setConfig(config: AlarmClockCardConfig): void {
-    if (!config.device_id) {
-      throw new Error('You need to define a device_id');
+    if (!config.device_id && !config.entity) {
+      throw new Error('You need to define a device_id or entity');
     }
 
     this.config = {
@@ -95,6 +110,13 @@ export class AlarmClockCard extends LitElement implements LovelaceCard {
       show_days: true,
       show_scripts: true,
       show_snooze_info: true,
+      show_title: true,
+      show_status: true,
+      show_settings_menu: true,
+      show_alarm_time: true,
+      show_next_alarm: true,
+      show_countdown: true,
+      show_controls: true,
       ...config,
     };
   }
@@ -167,15 +189,16 @@ export class AlarmClockCard extends LitElement implements LovelaceCard {
   }
 
   private async _updateEntities(): Promise<void> {
-    if (!this.hass || !this.config.device_id) {
-      this._debugError('🔍 ALARM CARD: Missing hass or device_id:', {
+    if (!this.hass || (!this.config.device_id && !this.config.entity)) {
+      this._debugError('🔍 ALARM CARD: Missing hass or device_id/entity:', {
         hass: !!this.hass,
-        device_id: this.config.device_id
+        device_id: this.config.device_id,
+        entity: this.config.entity,
       });
       return;
     }
 
-    this._debug('🔍 ALARM CARD: Looking for entities for device:', this.config.device_id);
+    this._debug('🔍 ALARM CARD: Looking for entities for device:', this.config.device_id || this.config.entity);
 
     try {
       // Get entity registry to find entities for this device
@@ -185,9 +208,21 @@ export class AlarmClockCard extends LitElement implements LovelaceCard {
 
       this._debug('🔍 ALARM CARD: Entity registry loaded, total entities:', entityRegistry.length);
 
+      let deviceId = this.config.device_id;
+      if (!deviceId && this.config.entity) {
+        const matchingEntity = entityRegistry.find((entity: any) => entity.entity_id === this.config.entity);
+        deviceId = matchingEntity?.device_id;
+      }
+
+      if (!deviceId) {
+        this._debugError('🔍 ALARM CARD: Could not resolve device_id from entity:', this.config.entity);
+        this.entities = {};
+        return;
+      }
+
       // Find entities that belong to this device
       const deviceEntities = entityRegistry.filter((entity: any) => 
-        entity.device_id === this.config.device_id
+        entity.device_id === deviceId
       );
 
       this._debug('🔍 ALARM CARD: Found device entities:', deviceEntities.length, deviceEntities);
@@ -281,7 +316,7 @@ export class AlarmClockCard extends LitElement implements LovelaceCard {
       return html`
         <ha-card>
           <div class="warning">
-            ${!this.config ? 'No configuration' : `Device not available: ${this.config.device_id}`}
+            ${!this.config ? 'No configuration' : `Device not available: ${this.config.device_id || this.config.entity}`}
           </div>
         </ha-card>
       `;
@@ -323,11 +358,23 @@ export class AlarmClockCard extends LitElement implements LovelaceCard {
     const timeUntil = (isEnabled && timeUntilEntity?.attributes?.human_readable)
       ? timeUntilEntity.attributes.human_readable : null;
     const countdownType = timeUntilEntity?.attributes?.countdown_type;
-    
+
+    const showTitle = this.config.show_title !== false;
+    const showStatus = this.config.show_status !== false;
+    const showSettingsMenu = this.config.show_settings_menu !== false;
+    const showAlarmTime = this.config.show_alarm_time !== false;
+    const showNextAlarm = this.config.show_next_alarm !== false;
+    const showCountdown = this.config.show_countdown !== false;
+    const showControls = this.config.show_controls !== false;
+
     // Get day states
     const enabledDays = Object.keys(this.entities.days || {}).filter(day => 
       this.entities.days![day]?.state === 'on'
     );
+
+    const showTimeDisplay = showAlarmTime
+      || (showNextAlarm && !!(nextAlarm && nextAlarmDay))
+      || (showCountdown && !!timeUntil);
 
     this._debug('🎯 ALARM CARD: Rendering with entity states:', {
       alarmTime,
@@ -344,43 +391,64 @@ export class AlarmClockCard extends LitElement implements LovelaceCard {
     return html`
       <ha-card @click=${this._handleCardClick}>
         <div class="card-content">
-          <div class="header">
-            <div class="title">${this.config.name || this._translations.card.title}</div>
-            <div class="header-right">
-              <div class="status ${status}">${this._getStatusTranslation(status)}</div>
-              <div class="settings-menu">
-                <button 
-                  class="settings-button"
-                  @click=${this._toggleSettingsMenu}
-                  title="Settings"
-                >
-                  ⋮
-                </button>
-                ${this._showSettingsMenu ? this._renderSettingsMenu() : ''}
-              </div>
-            </div>
-          </div>
+          ${showTitle || showStatus || showSettingsMenu
+            ? html`
+                <div class="header">
+                  ${showTitle
+                    ? html`<div class="title">${this.config.name || this._translations.card.title}</div>`
+                    : html``}
+                  ${showStatus || showSettingsMenu
+                    ? html`
+                        <div class="header-right">
+                          ${showStatus
+                            ? html`<div class="status ${status}">${this._getStatusTranslation(status)}</div>`
+                            : html``}
+                          ${showSettingsMenu
+                            ? html`
+                                <div class="settings-menu">
+                                  <button 
+                                    class="settings-button"
+                                    @click=${this._toggleSettingsMenu}
+                                    title="Settings"
+                                  >
+                                    ⋮
+                                  </button>
+                                  ${this._showSettingsMenu ? this._renderSettingsMenu() : ''}
+                                </div>
+                              `
+                            : html``}
+                        </div>
+                      `
+                    : html``}
+                </div>
+              `
+            : html``}
 
-          <div class="time-display">
-            <div class="alarm-time">${alarmTime}</div>
-            ${nextAlarm && nextAlarmDay
-              ? html`<div class="next-alarm">${this._translations.card.next_alarm}: ${nextAlarmDay} at ${this._formatTime(new Date(nextAlarm).toTimeString().substring(0, 5))}</div>`
-              : html``}
-            ${timeUntil
-              ? html`
-                  <div class="countdown">
-                    <span class="countdown-label">
-                      ${countdownType === 'snooze' ? this._translations.card.snooze_ends_in : this._translations.card.alarm_in}
-                    </span>
-                    <span class="countdown-time">${timeUntil}</span>
-                  </div>
-                `
-              : html``}
-          </div>
+          ${showTimeDisplay
+            ? html`
+                <div class="time-display">
+                  ${showAlarmTime ? html`<div class="alarm-time">${alarmTime}</div>` : html``}
+                  ${showNextAlarm && nextAlarm && nextAlarmDay
+                    ? html`<div class="next-alarm">${this._translations.card.next_alarm}: ${nextAlarmDay} at ${this._formatTime(new Date(nextAlarm).toTimeString().substring(0, 5))}</div>`
+                    : html``}
+                  ${showCountdown && timeUntil
+                    ? html`
+                        <div class="countdown">
+                          <span class="countdown-label">
+                            ${countdownType === 'snooze' ? this._translations.card.snooze_ends_in : this._translations.card.alarm_in}
+                          </span>
+                          <span class="countdown-time">${timeUntil}</span>
+                        </div>
+                      `
+                    : html``}
+                </div>
+              `
+            : html``}
 
           ${this.config.show_time_picker ? this._renderTimePicker() : html``}
-          ${this._renderControls(isEnabled, status)}
+          ${showControls ? this._renderControls(isEnabled, status) : html``}
           ${this.config.show_days ? this._renderDays(enabledDays) : html``}
+          ${this.config.show_scripts ? this._renderScriptsInfo(mainEntity?.attributes) : html``}
           ${this.config.show_snooze_info && status === 'snoozed' ? this._renderSnoozeInfo() : html``}
         </div>
       </ha-card>
@@ -470,6 +538,10 @@ export class AlarmClockCard extends LitElement implements LovelaceCard {
   }
 
   private _renderScriptsInfo(attrs: any): TemplateResult {
+    if (!attrs) {
+      return html``;
+    }
+
     const scripts: Array<{ label: string; value: string }> = [];
 
     if (attrs.pre_alarm_enabled && attrs.pre_alarm_script) {
